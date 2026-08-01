@@ -4,7 +4,7 @@ SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 SET LOCK_TIMEOUT -1
 SET QUOTED_IDENTIFIER OFF
 GO
---exec spNaviExploraProntoPago 'NVK',N'JQUEZADA',N'01/01/2026',N'31/07/2026',N'0'
+--exec spNaviExploraProntoPago 'NVK',N'JQUEZADA',N'30/06/2026',N'31/07/2026',N'0'
 --EXEC spNaviExploraProntoPagoActualizar  'NVK'
 IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'spNaviExploraProntoPago' AND TYPE  ='P')
 DROP PROC spNaviExploraProntoPago
@@ -159,7 +159,7 @@ LEFT JOIN (
                 ROW_NUMBER()    OVER (PARTITION BY CD.Aplica, CD.AplicaID
                                       ORDER BY C.ID DESC) AS rn                          -- fila representativa (último cobro)
         FROM CXC C
-        JOIN MovTipo M  ON C.Mov = M.Mov  AND M.Modulo='CXC' AND M.Clave IN ('CXC.C','CXC.ANC')
+        JOIN MovTipo M  ON C.Mov = M.Mov  AND M.Modulo='CXC' AND M.Clave IN ('CXC.C'/*,'CXC.ANC'*/)
         JOIN CXCD CD    ON C.ID = CD.ID
         JOIN MovTipo M2 ON CD.Aplica = M2.Mov AND M2.Modulo='CXC' AND M2.Clave='CXC.F'
         WHERE C.Estatus IN ('PENDIENTE','CONCLUIDO') AND C.Empresa = @Empresa
@@ -221,11 +221,16 @@ LEFT JOIN (
               )   NC ON C.MOV=NC.Aplica AND C.MovID=NC.AplicaID and nc.Referencia=ant.mov+' '+ant.movid  
 /***************************************** notas de crédito ******************************************/
   LEFT JOIN  (		
-				SELECT CD.Aplica, CD.AplicaID, C.ID, C.Importe,C.Impuestos,Referencia, c.FechaEmision, c.FechaOriginal      
+				SELECT Aplica, AplicaID, ID, Importe,Impuestos,Referencia, FechaEmision,FechaOriginal--,c.Mov,c.MovID      
+				FROM 
+				(
+				SELECT CD.Aplica, CD.AplicaID, C.ID, C.Impuestos,Referencia, c.FechaEmision, c.FechaOriginal--,c.Mov,c.MovID      
+				, SUM(cd.Importe) OVER (PARTITION BY cd.Aplica, cd.AplicaID) AS Importe,
+				ROW_NUMBER() OVER (PARTITION BY cd.Aplica, cd.AplicaID ORDER BY c.ID DESC) AS rn
                   FROM CXC  C      
                   JOIN MovTipo M ON C.Mov=M.MOV AND M.MODULO='CXC' AND Clave='CXC.NC'   
                   JOIN CXCD CD ON C.ID=CD.ID      
-                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = @Empresa --AND M.SubClave <> 'CXC.NCPP'
+                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = 'NVK' --AND M.SubClave <> 'CXC.NCPP'
 				    AND M.Mov IN ('Cancel Sat Ingresos',
 								'Nota Cliente',	
 								'Nota Cliente Vta',
@@ -236,6 +241,8 @@ LEFT JOIN (
 								'Nota Credito PP',
 								'Nota Credito SI',
 								'Nota Credito Temp')
+			) N 
+			WHERE n.rn = 1
 			) NCA ON C.Mov = NCA.Aplica AND C.MovID = NCA.AplicaID	
 /***************************************** JARC Aplicacinones NC no referenciadas ******************************************/
   LEFT JOIN (
@@ -354,7 +361,7 @@ LEFT JOIN (
                 ROW_NUMBER()    OVER (PARTITION BY CD.Aplica, CD.AplicaID
                                       ORDER BY C.ID DESC) AS rn                          -- fila representativa (último cobro)
         FROM CXC C
-        JOIN MovTipo M  ON C.Mov = M.Mov  AND M.Modulo='CXC' AND M.Clave IN ('CXC.C','CXC.ANC')
+        JOIN MovTipo M  ON C.Mov = M.Mov  AND M.Modulo='CXC' AND M.Clave IN ('CXC.C'/*,'CXC.ANC'*/)
         JOIN CXCD CD    ON C.ID = CD.ID
         JOIN MovTipo M2 ON CD.Aplica = M2.Mov AND M2.Modulo='CXC' AND M2.Clave='CXC.F'
         WHERE C.Estatus IN ('PENDIENTE','CONCLUIDO') AND C.Empresa = @Empresa
@@ -418,11 +425,16 @@ LEFT JOIN (
               )   NC ON C.MOV=NC.Aplica AND C.MovID=NC.AplicaID and nc.Referencia=ant.mov+' '+ant.movid
 /***************************************** notas de crédito ******************************************/
   LEFT JOIN  (		
-				SELECT CD.Aplica, CD.AplicaID, C.ID, C.Importe,C.Impuestos,Referencia, c.FechaEmision, c.FechaOriginal      
+				SELECT Aplica, AplicaID, ID, Importe,Impuestos,Referencia, FechaEmision,FechaOriginal--,c.Mov,c.MovID      
+				FROM 
+				(
+				SELECT CD.Aplica, CD.AplicaID, C.ID, C.Impuestos,Referencia, c.FechaEmision, c.FechaOriginal--,c.Mov,c.MovID      
+				, SUM(cd.Importe) OVER (PARTITION BY cd.Aplica, cd.AplicaID) AS Importe,
+				ROW_NUMBER() OVER (PARTITION BY cd.Aplica, cd.AplicaID ORDER BY c.ID DESC) AS rn
                   FROM CXC  C      
                   JOIN MovTipo M ON C.Mov=M.MOV AND M.MODULO='CXC' AND Clave='CXC.NC'   
                   JOIN CXCD CD ON C.ID=CD.ID      
-                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = @Empresa --AND M.SubClave <> 'CXC.NCPP'
+                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = 'NVK' --AND M.SubClave <> 'CXC.NCPP'
 				    AND M.Mov IN ('Cancel Sat Ingresos',
 								'Nota Cliente',	
 								'Nota Cliente Vta',
@@ -433,7 +445,9 @@ LEFT JOIN (
 								'Nota Credito PP',
 								'Nota Credito SI',
 								'Nota Credito Temp')
-			) NCA ON C.Mov = NCA.Aplica AND C.MovID = NCA.AplicaID
+			) N 
+			WHERE n.rn = 1
+			) NCA ON C.Mov = NCA.Aplica AND C.MovID = NCA.AplicaID	
 /***************************************** JARC Aplicacinones NC no referenciadas ******************************************/
   LEFT JOIN (
   --SELECT C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d.Importe
