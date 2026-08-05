@@ -211,7 +211,7 @@ LEFT JOIN (
 				) z
 				WHERE z.rn = 1
 /*****************************************JARC se comentan las lineas de origen y origenid ya que se eliminan en la linea anterior******************************************/				  
-              )   ant on c.Mov=ant.Aplica AND c.MovID=ant.AplicaID  AND P.Origen = ant.Origen AND P.OrigenID = ant.OrigenID       
+              )   ant on c.Mov=ant.Aplica AND c.MovID=ant.AplicaID  --AND P.Origen = ant.Origen AND P.OrigenID = ant.OrigenID       
 /***************************************** notas de crédito pronto pago ******************************************/
   LEFT JOIN   (SELECT CD.Aplica, CD.AplicaID, C.ID, Referencia, c.FechaEmision, c.FechaOriginal      
                   FROM CXC  C      
@@ -414,7 +414,7 @@ LEFT JOIN (
 				) z
 				WHERE z.rn = 1
 /*****************************************JARC se comentan las lineas de origen y origenid ya que se eliminan en la linea anterior******************************************/				  
-              )   ant on c.Mov=ant.Aplica AND c.MovID=ant.AplicaID  AND P.Origen = ant.Origen AND P.OrigenID = ant.OrigenID
+              )   ant on c.Mov=ant.Aplica AND c.MovID=ant.AplicaID  --AND P.Origen = ant.Origen AND P.OrigenID = ant.OrigenID
 /***************************************** notas de crédito pronto pago ******************************************/				  
   LEFT JOIN   (  
                   SELECT CD.Aplica, CD.AplicaID, C.ID, c.Referencia, c.FechaEmision, c.FechaOriginal      
