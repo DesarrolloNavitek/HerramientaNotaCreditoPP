@@ -202,8 +202,8 @@ LEFT JOIN (
 								  AND m.MODULO = 'CXC' 
 								  AND m.Clave  = 'CXC.ANC'              -- filtro original, solo anticipos
 					LEFT JOIN MovFlujo mf	ON mf.OMov = c.Origen AND mf.OMovID = c.OrigenID
-					LEFT JOIN MovFlujo mf2	ON mf.OID = mf2.DID 
-					WHERE c.Empresa = 'NVK'
+					LEFT JOIN MovFlujo mf2	ON  mf2.OMov = cd.Aplica and MF2.OMovID = CD.AplicaID 
+					WHERE c.Empresa = @Empresa
 					  AND c.Estatus IN ('PENDIENTE', 'CONCLUIDO')
 					  AND cd.Aplica <> 'Redondeo'
 					  and c.ID = mf.DID
@@ -230,7 +230,7 @@ LEFT JOIN (
                   FROM CXC  C      
                   JOIN MovTipo M ON C.Mov=M.MOV AND M.MODULO='CXC' AND Clave='CXC.NC'   
                   JOIN CXCD CD ON C.ID=CD.ID      
-                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = 'NVK' --AND M.SubClave <> 'CXC.NCPP'
+                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = @Empresa --AND M.SubClave <> 'CXC.NCPP'
 				    AND M.Mov IN ('Cancel Sat Ingresos',
 								'Nota Cliente',	
 								'Nota Cliente Vta',
@@ -271,7 +271,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
     LEFT JOIN		MovFlujo	mf ON c.Mov = mf.dmov AND c.MovID = mf.DMovID
 	LEFT JOIN		MovFlujo	mf2 ON mf.OID = mf2.DID
     JOIN			CxcD		d  ON d.ID  = c.ID
-   WHERE  C.Empresa = 'NVK'
+   WHERE  C.Empresa = @Empresa
      AND mf.DModulo = 'CXC'
      AND d.Aplica   NOT IN ('Redondeo')
 	 AND mf2.OModulo = 'VTAS'
@@ -404,9 +404,9 @@ LEFT JOIN (
 					JOIN MovTipo m ON c.MOV = m.MOV 
 								  AND m.MODULO = 'CXC' 
 								  AND m.Clave  = 'CXC.ANC'              -- filtro original, solo anticipos
-					LEFT JOIN MovFlujo mf	ON mf.OMov = c.Origen AND mf.OMovID = c.OrigenID
-					LEFT JOIN MovFlujo mf2	ON mf.OID = mf2.DID 
-					WHERE c.Empresa = 'NVK'
+					LEFT JOIN MovFlujo mf	ON mf.OMov = c.Origen AND mf.OMovID = c.OrigenID --Se modifica para que devuelva un solo registro
+					LEFT JOIN MovFlujo mf2	ON  mf2.OMov = cd.Aplica and MF2.OMovID = CD.AplicaID 
+					WHERE c.Empresa = @Empresa
 					  AND c.Estatus IN ('PENDIENTE', 'CONCLUIDO')
 					  AND cd.Aplica <> 'Redondeo'
 					  and c.ID = mf.DID
@@ -434,7 +434,7 @@ LEFT JOIN (
                   FROM CXC  C      
                   JOIN MovTipo M ON C.Mov=M.MOV AND M.MODULO='CXC' AND Clave='CXC.NC'   
                   JOIN CXCD CD ON C.ID=CD.ID      
-                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = 'NVK' --AND M.SubClave <> 'CXC.NCPP'
+                  WHERE C.ESTATUS='CONCLUIDO' AND C.Empresa = @Empresa --AND M.SubClave <> 'CXC.NCPP'
 				    AND M.Mov IN ('Cancel Sat Ingresos',
 								'Nota Cliente',	
 								'Nota Cliente Vta',
@@ -474,7 +474,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
     LEFT JOIN		MovFlujo	mf ON c.Mov = mf.dmov AND c.MovID = mf.DMovID
 	LEFT JOIN		MovFlujo	mf2 ON mf.OID = mf2.DID
     JOIN			CxcD		d  ON d.ID  = c.ID
-   WHERE  C.Empresa = 'NVK'
+   WHERE  C.Empresa = @Empresa
      AND mf.DModulo = 'CXC'
      AND d.Aplica   NOT IN ('Redondeo')
 	 AND mf2.OModulo = 'VTAS'
