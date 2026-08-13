@@ -4,7 +4,7 @@ SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED
 SET LOCK_TIMEOUT -1
 SET QUOTED_IDENTIFIER OFF
 GO
---exec spNaviExploraProntoPago 'NVK',N'JQUEZADA',N'30/06/2026',N'31/07/2026',N'0'
+--exec spNaviExploraProntoPago 'NVK','JQUEZADA','13/07/2026',N'13/08/2026',N'0'
 --EXEC spNaviExploraProntoPagoActualizar  'NVK'
 IF EXISTS (SELECT 1 FROM sys.objects WHERE name = 'spNaviExploraProntoPago' AND TYPE  ='P')
 DROP PROC spNaviExploraProntoPago
@@ -127,10 +127,11 @@ BEGIN
                                           ISNULL(P.IMPORTE, ISNULL(antc.anticipo, ant.Importe)) as Anticipo,    
                                           ISNULL(C.Saldo,0),    -- Total: Se reemplaza el saldo de la factura por el importe de la factura menos el valor de la nota de crédito aplicada   
                                           --ISNULL(ISNULL((C.Importe+ISNULL(C.Impuestos,0))-ISNULL(C.Retencion,0),0) - ISNULL((ISNULL(P.IMPORTE, ISNULL(antc.anticipo, ant.Importe))),0),0),
-										  ISNULL(DATEDIFF(DD, C.FechaEmision, P.FechaOriginal),0), --*Dias    
+										  ISNULL(DATEDIFF(DD, C.FechaEmision, P.FechaOriginal),ISNULL(DATEDIFF(DD, C.FechaEmision, ant.FechaOriginal),DATEDIFF(DD, C.FechaEmision, antc.FechaOriginal))) as Dias, --*Dias       
                                           --ISNULL(P.FechaEmision,C.FechaEmision),
 										  --ISNULL(P.FechaEmision,ISNULL(antc.FechaEmision,ISNULL(ant.FechaEmision,ISNULL(NC.FechaEmision,C.FechaEmision)))),
-										  ISNULL(P.FechaOriginal,ISNULL(antc.FechaOriginal,ISNULL(ant.FechaOriginal,ISNULL(NC.FechaOriginal,ISNULL(C.FechaOriginal,ISNULL(P.FechaEmision,C.FechaEmision)))))),
+										  --ISNULL(P.FechaOriginal,ISNULL(antc.FechaOriginal,ISNULL(ant.FechaOriginal,ISNULL(NC.FechaOriginal,C.FechaOriginal)))),
+										  ISNULL(P.FechaOriginal,ISNULL(antc.FechaOriginal,ISNULL(ant.FechaOriginal,ISNULL(NC.FechaOriginal,ISNULL(C.FechaOriginal,ISNULL(P.FechaEmision,C.FechaEmision)))))), 
                                           c.Moneda,           
                                           c.TipoCambio,   
                                           0,   
@@ -331,7 +332,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
                                           ISNULL(P.IMPORTE, ISNULL(antc.anticipo, ant.Importe)) as Anticipo,    
                                           ISNULL(C.Saldo,0), /*.Importe+ISNULL(c.Impuestos,0)-ISNULL(c.Retencion,0)- ISNULL(antc.anticipo, ant.Importe) as Total*/        
                                           --ISNULL(ISNULL((C.Importe+ISNULL(C.Impuestos,0))-ISNULL(C.Retencion,0),0) - ISNULL((ISNULL(P.IMPORTE, ISNULL(antc.anticipo, ant.Importe))),0),0),
-										  ISNULL(DATEDIFF(DD, C.FechaEmision, P.FechaOriginal),0),    -- *Dias  
+										  ISNULL(DATEDIFF(DD, C.FechaEmision, P.FechaOriginal),ISNULL(DATEDIFF(DD, C.FechaEmision, ant.FechaOriginal),DATEDIFF(DD, C.FechaEmision, antc.FechaOriginal))) as Dias, --*Dias     
                                           --ISNULL(P.FechaEmision, C.FechaEmision),    
 										  --ISNULL(P.FechaEmision,ISNULL(antc.FechaEmision,ISNULL(ant.FechaEmision,ISNULL(NC.FechaEmision,C.FechaEmision)))),
 										  ISNULL(P.FechaOriginal,ISNULL(antc.FechaOriginal,ISNULL(ant.FechaOriginal,ISNULL(NC.FechaOriginal,C.FechaOriginal)))),
@@ -488,7 +489,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
   AND C.agente in (SELECT  agente from agente where ReportaA=@Agente)       
   AND NC.Referencia IS NULL        
  END  
- 
+
     DELETE FROM #NaviExploraProntoPago WHERE LEN(Anticipo)=0 AND Empresa = @Empresa --*!Elimina el registro insertado cuyo anticipo sea 0  
   
     UPDATE N SET    Descuento=ISNULL(C.Descuento,0),    
@@ -533,7 +534,6 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
  ELSE  
   DELETE FROM #NaviExploraProntoPago WHERE Total = 0  
 
-  
  DECLARE crInsertaNaviExploraProntoPago CURSOR FAST_FORWARD FOR  
  SELECT ID,  
    Empresa,  
@@ -597,7 +597,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
    Anticipo  ,  
    Total  ,
    Dias   ,  
-   FechaPago  ,  
+   FechaPago,  
    Descuento  ,  
    IIF(ISNULL(@Modificar,0) = 0, ImporteDesc, @DescuentoX)  , --20250707 Se cambia el Importe que calcula nativamente la herramienta por el que modifica el usuario ImporteDesc se cambia por @DescuentoX  
    @LiberarEjecutivoS  ,  
@@ -619,7 +619,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
    AND  Empresa = @EmpresaInsertar   
    AND  Mov = @MovInsertar   
    AND  MovID = @MovIDInsertar   
-   AND  FechaPago = @FechaPagoInsertar   
+   --AND  FechaPago = @FechaPagoInsertar   
    AND  Aplica = @AplicaInsertar   
    AND  AplicaID = @AplicaIDInsertar  
    AND  IDAplica = @IDAplicaInsertar
@@ -730,7 +730,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
    AND  Empresa = @EmpresaInsertar   
    AND  Mov = @MovInsertar   
    AND  MovID = @MovIDInsertar   
- AND  FechaPago = @FechaPagoInsertar   
+ --AND  FechaPago = @FechaPagoInsertar   
    AND  Aplica = @AplicaInsertar   
    AND  AplicaID = @AplicaIDInsertar  
    AND  IDAplica = @IDAplicaInsertar  
@@ -741,7 +741,7 @@ SELECT mf2.OModulo,mf2.OMov,mf2.OMovID,C.Origen,C.OrigenID,d.Aplica,d.AplicaID,d
   
  CLOSE crInsertaNaviExploraProntoPago  
  DEALLOCATE crInsertaNaviExploraProntoPago  
-
+ 
  INSERT INTO NaviExploraProntoPagoEliminadas
  SELECT n.*
  FROM NaviExploraProntoPago n
